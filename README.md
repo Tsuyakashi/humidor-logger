@@ -47,6 +47,9 @@ API: `GET /api/now` → `{ ts, temperature, humidity }` (204, если данн�
 `GET /api/series?range=6h|24h|7d|30d` → `{ range, from, to, bucketMs, rhBand, points: [{ ts, t, h }] }`.
 Ответы кэшируются на 30 с.
 
+Превью ссылки (Open Graph): статичные тексты в `index.html` и `public/og.png`. Картинку генерирует
+`python3 scripts/og-image.py` (Pillow, шрифт с кириллицей через `fc-match`), результат коммитится.
+
 ## БД
 
 ```bash
@@ -60,7 +63,8 @@ echo 'SELECT count(*) FROM readings;' | scripts/db.sh 210 # произвольн
 - `/etc/humidor/secrets.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_IDS` (пишет secrets.sh)
 - `/etc/humidor/thresholds.env` (опционально, читает alerter):
   `HUM_LOW=62 HUM_HIGH=73 HUM_HYST=1.5 HUM_FOR_MIN=30 TEMP_HIGH=25 TEMP_HYST=0.5 TEMP_FOR_MIN=15 STALE_MIN=15 BATT_LOW_V=2.5 REMIND_HOURS=6`
-- `/etc/humidor/web.env` (опционально, читает web): `HUMIDOR_WEB_PORT=8080 WEB_RH_BAND=65,70`
+- `/etc/humidor/web.env` (опционально, читает web): `HUMIDOR_WEB_PORT=8080 WEB_RH_BAND=65,70 WEB_PUBLIC_URL=https://humidor.tail65829d.ts.net`
+  (`WEB_PUBLIC_URL` — база абсолютных URL для превью ссылки в мессенджерах, `og:url`/`og:image`)
 
 ## Логи
 

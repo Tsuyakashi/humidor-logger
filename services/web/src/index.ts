@@ -35,13 +35,18 @@ interface Payload {
 // Статика читается один раз при старте: отдаём только эти файлы
 const PUBLIC = new URL('./public/', import.meta.url);
 const STATIC: Record<string, Payload> = {};
-for (const [path, file, type] of [
-  ['/', 'index.html', 'text/html; charset=utf-8'],
-  ['/app.js', 'app.js', 'text/javascript; charset=utf-8'],
-  ['/uplot.min.js', 'uplot.min.js', 'text/javascript; charset=utf-8'],
-  ['/uplot.min.css', 'uplot.min.css', 'text/css; charset=utf-8'],
+for (const [path, file, type, cache] of [
+  ['/', 'index.html', 'text/html; charset=utf-8', 'no-cache'],
+  ['/app.js', 'app.js', 'text/javascript; charset=utf-8', 'no-cache'],
+  ['/uplot.min.js', 'uplot.min.js', 'text/javascript; charset=utf-8', 'no-cache'],
+  ['/uplot.min.css', 'uplot.min.css', 'text/css; charset=utf-8', 'no-cache'],
+  ['/favicon.svg', 'favicon.svg', 'image/svg+xml', 'public, max-age=86400'],
+  ['/og.png', 'og.png', 'image/png', 'public, max-age=86400'],
 ] as const) {
-  STATIC[path] = { status: 200, type, body: readFileSync(new URL(file, PUBLIC)), cache: 'no-cache' };
+  let body = readFileSync(new URL(file, PUBLIC));
+  // абсолютные URL для og:url/og:image — простая замена плейсхолдера
+  if (file === 'index.html') body = Buffer.from(body.toString('utf8').replaceAll('%PUBLIC_URL%', cfg.publicUrl));
+  STATIC[path] = { status: 200, type, body, cache };
 }
 
 const round = (v: number) => Math.round(v * 100) / 100;
