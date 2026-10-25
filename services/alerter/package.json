@@ -1,0 +1,11 @@
+{
+  "name": "@humidor/alerter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "dependencies": {
+    "@humidor/core": "*",
+    "grammy": "^1.30.0"
+  }
+}

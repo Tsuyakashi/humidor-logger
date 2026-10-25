@@ -1,0 +1,20 @@
+{
+  "name": "humidor-logger",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

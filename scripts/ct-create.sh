@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Создание и настройка CT для humidor-logger: unprivileged Debian 13,
 # D-Bus хоста в /mnt/host-dbus, uid BUS_UID замаплен 1:1 (см. host-setup.sh),
-# сервисный юзер humidor с этим uid, venv с bleak + xiaomi-ble.
+# сервисный юзер humidor с этим uid, Node.js, каталоги и /etc/default/humidor.
 # Идемпотентный. Запуск: ssh pve-rog 'bash -s -- <ctid>' < scripts/ct-create.sh
-# Переопределение: CT_IP=192.168.100.50/24,gw=192.168.100.1 CT_STORAGE=... и т.д.
+# Переопределение: CT_IP=192.168.100.50/24,gw=192.168.100.1 CT_STORAGE=... HUMIDOR_MAC=...
 set -euo pipefail
 
 CTID="${1:?usage: ct-create.sh <ctid>}"
@@ -13,8 +13,10 @@ STORAGE="${CT_STORAGE:-local-lvm}"
 BRIDGE="${CT_BRIDGE:-vmbr0}"
 NET_IP="${CT_IP:-dhcp}"
 BUS_UID="${BUS_UID:-2000}"
+HUMIDOR_MAC="${HUMIDOR_MAC:-A4:C1:38:1D:96:98}"
+TZ_NAME="${TZ_NAME:-Europe/Minsk}"
+NODE_MAJOR="${NODE_MAJOR:-24}"
 APP_USER=humidor
-APP_DIR=/opt/humidor
 CONF="/etc/pve/lxc/${CTID}.conf"
 # Не в /run: systemd в CT монтирует tmpfs поверх /run и прячет bind-mount
 DBUS_MOUNT='lxc.mount.entry: /run/dbus mnt/host-dbus none bind,create=dir 0 0'
@@ -93,18 +95,46 @@ for _ in $(seq 1 30); do
 done
 (( ok )) || { log "no network in CT"; exit 1; }
 
-# 6. Провижн внутри CT
+# 6. Провижн внутри CT (heredoc в кавычках, переменные передаются через env)
 log "provision"
-pct exec "$CTID" -- bash -s <<EOF
+pct exec "$CTID" -- env \
+  BUS_UID="$BUS_UID" APP_USER="$APP_USER" DBUS_ADDR="$DBUS_ADDR" \
+  HUMIDOR_MAC="$HUMIDOR_MAC" TZ_NAME="$TZ_NAME" NODE_MAJOR="$NODE_MAJOR" \
+  bash -s <<'EOF'
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8 LANG=C.UTF-8
+
 apt-get update -q
-apt-get install -y -q python3-venv
-id ${APP_USER} >/dev/null 2>&1 || \
-  useradd --system --uid ${BUS_UID} --home ${APP_DIR} --no-create-home --shell /usr/sbin/nologin ${APP_USER}
-[[ -x ${APP_DIR}/bin/python ]] || python3 -m venv ${APP_DIR}
-${APP_DIR}/bin/pip install -q --upgrade pip bleak xiaomi-ble
-echo "DBUS_SYSTEM_BUS_ADDRESS=${DBUS_ADDR}" > /etc/default/humidor
+apt-get install -y -q curl ca-certificates
+
+ln -sf "/usr/share/zoneinfo/${TZ_NAME}" /etc/localtime
+echo "$TZ_NAME" > /etc/timezone
+
+id "$APP_USER" >/dev/null 2>&1 || \
+  useradd --system --uid "$BUS_UID" --home /opt/humidor --no-create-home --shell /usr/sbin/nologin "$APP_USER"
+
+cur=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+if (( cur < NODE_MAJOR )); then
+  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
+  apt-get install -y -q nodejs
+fi
+
+# остатки python-прототипа
+if [[ -f /opt/humidor/pyvenv.cfg ]]; then
+  rm -rf /opt/humidor/{bin,include,lib,lib64,pyvenv.cfg,probe.py}
+fi
+
+install -d -m 0755 /opt/humidor
+install -d -m 0750 -o "$APP_USER" -g "$APP_USER" /var/lib/humidor
+install -d -m 0700 /etc/humidor
+
+cat > /etc/default/humidor <<ENV
+DBUS_SYSTEM_BUS_ADDRESS=${DBUS_ADDR}
+HUMIDOR_MAC=${HUMIDOR_MAC}
+HUMIDOR_DB=/var/lib/humidor/humidor.db
+TZ=${TZ_NAME}
+ENV
+echo "node $(node --version)"
 EOF
 
 # 7. Проверка: BlueZ хоста виден из CT под APP_USER
