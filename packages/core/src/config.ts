@@ -60,4 +60,19 @@ export function thresholdsConfig() {
   };
 }
 
+export function webConfig() {
+  const band = (process.env.WEB_RH_BAND || '65,70').split(',').map((s) => Number(s.trim()));
+  const [lo, hi] = band;
+  if (band.length !== 2 || !Number.isFinite(lo) || !Number.isFinite(hi) || lo! >= hi!) {
+    throw new Error(`env WEB_RH_BAND must be "low,high", got "${process.env.WEB_RH_BAND}"`);
+  }
+  return {
+    ...commonConfig(),
+    // только loopback: наружу страница выходит через Tailscale Funnel
+    host: '127.0.0.1',
+    port: num('HUMIDOR_WEB_PORT', 8080),
+    rhBand: [lo!, hi!] as [number, number],
+  };
+}
+
 export type Thresholds = ReturnType<typeof thresholdsConfig>;
