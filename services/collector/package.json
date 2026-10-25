@@ -1,0 +1,11 @@
+{
+  "name": "@humidor/collector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "dependencies": {
+    "@humidor/core": "*",
+    "dbus-next": "^0.10.2"
+  }
+}

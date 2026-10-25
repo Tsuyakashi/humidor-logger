@@ -1,0 +1,24 @@
+[Unit]
+Description=Humidor threshold alerts -> Telegram
+After=network-online.target humidor-collector.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=humidor
+Group=humidor
+EnvironmentFile=/etc/default/humidor
+EnvironmentFile=/etc/humidor/secrets.env
+EnvironmentFile=-/etc/humidor/thresholds.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/humidor/app/services/alerter/dist/index.js
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/humidor
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,23 @@
+[Unit]
+Description=Humidor Telegram bot (long polling)
+After=network-online.target humidor-collector.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=humidor
+Group=humidor
+EnvironmentFile=/etc/default/humidor
+EnvironmentFile=/etc/humidor/secrets.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/humidor/app/services/bot/dist/index.js
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/humidor
+
+[Install]
+WantedBy=multi-user.target

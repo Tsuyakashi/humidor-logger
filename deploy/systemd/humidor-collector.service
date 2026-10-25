@@ -1,0 +1,22 @@
+[Unit]
+Description=Humidor BLE collector (BTHome -> SQLite)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=humidor
+Group=humidor
+EnvironmentFile=/etc/default/humidor
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/humidor/app/services/collector/dist/index.js
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/humidor
+
+[Install]
+WantedBy=multi-user.target
