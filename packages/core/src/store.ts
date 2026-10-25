@@ -141,10 +141,11 @@ export class Store {
   }
 
   buckets(since: number, bucketMs: number): Bucket[] {
-    bucketMs = Math.max(1, Math.floor(bucketMs)); // целое, иначе SQLite делит без округления
+    bucketMs = Math.max(1, bucketMs);
+    // node:sqlite биндит JS-числа как REAL, деление получается дробным — приводим к номеру бакета
     const rows = this.db
       .prepare(
-        `SELECT (ts - ?) / ? AS b, avg(temperature) AS t, avg(humidity) AS h
+        `SELECT CAST((ts - ?) / ? AS INTEGER) AS b, avg(temperature) AS t, avg(humidity) AS h
          FROM readings WHERE ts >= ? AND temperature IS NOT NULL AND humidity IS NOT NULL
          GROUP BY b ORDER BY b`,
       )
