@@ -21,6 +21,7 @@ export interface WindowStats {
   hMin: number | null;
   hMax: number | null;
   hAvg: number | null;
+  first: number | null; // ts первого измерения в окне
 }
 
 export interface Bucket {
@@ -91,6 +92,13 @@ export class Store {
     return (row?.ts as number | null) ?? null;
   }
 
+  lastPacketId(): number | null {
+    const row = this.db
+      .prepare('SELECT packet_id FROM readings WHERE packet_id IS NOT NULL ORDER BY ts DESC LIMIT 1')
+      .get() as Row | undefined;
+    return (row?.packet_id as number | null) ?? null;
+  }
+
   latestClimate(): Reading | null {
     const row = this.db
       .prepare(
@@ -125,7 +133,8 @@ export class Store {
       .prepare(
         `SELECT count(*) AS n,
                 min(temperature) AS tMin, max(temperature) AS tMax, avg(temperature) AS tAvg,
-                min(humidity) AS hMin, max(humidity) AS hMax, avg(humidity) AS hAvg
+                min(humidity) AS hMin, max(humidity) AS hMax, avg(humidity) AS hAvg,
+                min(ts) AS first
          FROM readings WHERE ts >= ? AND temperature IS NOT NULL AND humidity IS NOT NULL`,
       )
       .get(since) as Row;
@@ -137,14 +146,16 @@ export class Store {
       hMin: row.hMin as number | null,
       hMax: row.hMax as number | null,
       hAvg: row.hAvg as number | null,
+      first: row.first as number | null,
     };
   }
 
   buckets(since: number, bucketMs: number): Bucket[] {
-    bucketMs = Math.max(1, Math.floor(bucketMs)); // целое, иначе SQLite делит без округления
+    bucketMs = Math.max(1, bucketMs);
+    // node:sqlite биндит JS-числа как REAL, деление получается дробным — приводим к номеру бакета
     const rows = this.db
       .prepare(
-        `SELECT (ts - ?) / ? AS b, avg(temperature) AS t, avg(humidity) AS h
+        `SELECT CAST((ts - ?) / ? AS INTEGER) AS b, avg(temperature) AS t, avg(humidity) AS h
          FROM readings WHERE ts >= ? AND temperature IS NOT NULL AND humidity IS NOT NULL
          GROUP BY b ORDER BY b`,
       )

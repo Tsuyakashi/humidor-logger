@@ -1,12 +1,19 @@
 const BLOCKS = '▁▂▃▄▅▆▇█';
 
-export function sparkline(values: number[]): string {
-  if (values.length === 0) return '';
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+const GAP = '·';
+
+// null — пустой слот (нет данных), рисуется точкой
+export function sparkline(values: (number | null)[]): string {
+  const present = values.filter((v): v is number => v !== null);
+  if (present.length === 0) return GAP.repeat(values.length);
+  const min = Math.min(...present);
+  const max = Math.max(...present);
   const span = max - min;
   return values
-    .map((v) => (span === 0 ? BLOCKS[3] : BLOCKS[Math.round(((v - min) / span) * (BLOCKS.length - 1))]))
+    .map((v) => {
+      if (v === null) return GAP;
+      return span === 0 ? BLOCKS[3] : BLOCKS[Math.round(((v - min) / span) * (BLOCKS.length - 1))];
+    })
     .join('');
 }
 

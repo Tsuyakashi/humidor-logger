@@ -1,0 +1,24 @@
+[Unit]
+Description=Humidor public web page (127.0.0.1, via Tailscale Funnel)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=humidor
+Group=humidor
+EnvironmentFile=/etc/default/humidor
+EnvironmentFile=-/etc/humidor/web.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/humidor/app/services/web/dist/index.js
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+# WAL-читателю нужен -shm, поэтому rw, хотя web только читает
+ReadWritePaths=/var/lib/humidor
+
+[Install]
+WantedBy=multi-user.target

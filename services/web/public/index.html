@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Хьюмидор — температура и влажность</title>
+  <meta name="description" content="Живой мониторинг хьюмидора: температура и влажность с BLE-датчика, графики за 6 ч — 30 дней.">
+  <!-- Превью статичное: мессенджеры кэшируют карточку, текущие цифры в ней устарели бы.
+       %PUBLIC_URL% подставляет сервер при старте (WEB_PUBLIC_URL). -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Хьюмидор">
+  <meta property="og:title" content="Хьюмидор — температура и влажность">
+  <meta property="og:description" content="Живой мониторинг хьюмидора: температура и влажность с BLE-датчика, графики за 6 ч — 30 дней.">
+  <meta property="og:url" content="%PUBLIC_URL%/">
+  <meta property="og:image" content="%PUBLIC_URL%/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Хьюмидор: график температуры и влажности с коридором 65–70 %">
+  <meta property="og:locale" content="ru_RU">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#151514" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="uplot.min.css">
+  <style>
+    :root {
+      --bg: #f6f5f2;
+      --card: #ffffff;
+      --fg: #1d1c1a;
+      --muted: #75716a;
+      --grid: rgba(0, 0, 0, 0.08);
+      --temp: #d9622b;
+      --hum: #2b7bd9;
+      --band: rgba(43, 123, 217, 0.12);
+      --accent: #1d1c1a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #151514;
+        --card: #1f1e1d;
+        --fg: #ecebe8;
+        --muted: #9a968f;
+        --grid: rgba(255, 255, 255, 0.08);
+        --temp: #f08a55;
+        --hum: #5ea3f2;
+        --band: rgba(94, 163, 242, 0.14);
+        --accent: #ecebe8;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 960px; margin: 0 auto; padding: 24px 16px 32px; }
+    header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 32px; margin-bottom: 20px; }
+    .metric { display: flex; align-items: baseline; gap: 6px; }
+    .metric .v { font-size: clamp(40px, 11vw, 64px); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+    .metric .u { font-size: 20px; color: var(--muted); }
+    .metric.t .v { color: var(--temp); }
+    .metric.h .v { color: var(--hum); }
+    #updated { flex-basis: 100%; color: var(--muted); font-size: 14px; }
+    .card { background: var(--card); border-radius: 12px; padding: 12px 12px 4px; }
+    nav { display: flex; gap: 4px; margin-bottom: 8px; }
+    nav button {
+      flex: 0 0 auto;
+      border: 1px solid var(--grid);
+      background: transparent;
+      color: var(--fg);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    nav button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    #chart { width: 100%; min-height: 280px; }
+    #empty { color: var(--muted); padding: 40px 0; text-align: center; }
+    .uplot { font-family: inherit; }
+    .u-legend { color: var(--fg); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="metric t"><span class="v" id="temp">—</span><span class="u">°C</span></div>
+      <div class="metric h"><span class="v" id="hum">—</span><span class="u">%</span></div>
+      <div id="updated">загрузка…</div>
+    </header>
+    <section class="card">
+      <nav id="ranges">
+        <button type="button" data-range="6h">6 ч</button>
+        <button type="button" data-range="24h">24 ч</button>
+        <button type="button" data-range="7d">7 д</button>
+        <button type="button" data-range="30d">30 д</button>
+      </nav>
+      <div id="chart"></div>
+      <div id="empty" hidden>За этот период данных нет</div>
+    </section>
+  </main>
+  <script src="uplot.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

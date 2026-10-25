@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .drop { fill: #2b7bd9; }
+    .mark { fill: none; stroke: #ffffff; stroke-width: 2.2; stroke-linecap: round; opacity: 0.85; }
+    @media (prefers-color-scheme: dark) { .drop { fill: #5ea3f2; } .mark { stroke: #151514; } }
+  </style>
+  <path class="drop" d="M16 2.5C16 2.5 6 13.6 6 20a10 10 0 0 0 20 0C26 13.6 16 2.5 16 2.5Z"/>
+  <path class="mark" d="M11.5 20.5a4.5 4.5 0 0 0 4.5 4.5"/>
+</svg>

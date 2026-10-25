@@ -4,6 +4,7 @@
     { "path": "packages/core" },
     { "path": "services/collector" },
     { "path": "services/alerter" },
-    { "path": "services/bot" }
+    { "path": "services/bot" },
+    { "path": "services/web" }
   ]
 }

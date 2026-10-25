@@ -5,7 +5,8 @@ const log = logger('collector');
 const cfg = collectorConfig();
 const store = new Store(cfg.dbPath);
 
-let lastPacketId: number | null = null;
+// после рестарта не пишем повтор последнего пакета
+let lastPacketId: number | null = store.lastPacketId();
 let lastAdvAt = Date.now();
 let restarting = false;
 
