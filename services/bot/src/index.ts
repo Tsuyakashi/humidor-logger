@@ -3,6 +3,7 @@ import {
   Store,
   ago,
   clock,
+  duration,
   fmt,
   logger,
   sparkline,
@@ -13,6 +14,7 @@ const log = logger('bot');
 const tg = telegramConfig();
 const store = new Store(tg.dbPath);
 const allowed = new Set(tg.chatIds);
+const ignored = new Set<number | undefined>();
 const bot = new Bot(tg.token);
 
 const ALERT_NAMES: Record<string, string> = {
@@ -27,7 +29,11 @@ const ALERT_NAMES: Record<string, string> = {
 bot.use(async (ctx, next) => {
   const id = ctx.chat?.id;
   if (id === undefined || !allowed.has(id)) {
-    log.warn(`ignored update from chat ${id}`);
+    // логируем один раз на чат, чтобы спам не забивал журнал
+    if (!ignored.has(id)) {
+      ignored.add(id);
+      log.warn(`ignored updates from chat ${id}`);
+    }
     return;
   }
   await next();
@@ -77,24 +83,37 @@ bot.command('status', async (ctx) => {
   await ctx.reply(lines.join('\n'));
 });
 
+const SLOTS = 24;
+
 bot.command('history', async (ctx) => {
   const rangeMs = parseRange(ctx.match || '24h');
-  const since = Date.now() - rangeMs;
+  const now = Date.now();
+  const since = now - rangeMs;
   const s = store.stats(since);
   if (s.n === 0) return ctx.reply('За этот период данных нет');
 
-  const buckets = store.buckets(since, Math.ceil(rangeMs / 24));
+  // фиксированная шкала времени: пустые слоты остаются null и рисуются точками
+  const bucketMs = rangeMs / SLOTS;
+  const h: (number | null)[] = Array(SLOTS).fill(null);
+  const t: (number | null)[] = Array(SLOTS).fill(null);
+  for (const b of store.buckets(since, bucketMs)) {
+    const i = Math.min(Math.max(b.b, 0), SLOTS - 1);
+    h[i] = b.h;
+    t[i] = b.t;
+  }
+
   const hours = rangeMs / 3_600_000;
-  const label = hours >= 48 ? `${Math.round(hours / 24)} д` : `${Math.round(hours)} ч`;
+  let label = hours >= 48 ? `${Math.round(hours / 24)} д` : `${Math.round(hours)} ч`;
+  if (s.first !== null && s.first - since > bucketMs) label += `, данные за последние ${duration(now - s.first)}`;
   await ctx.reply(
     [
       `📈 за ${label} (${s.n} измерений)`,
       '',
       `💧 ${fmt(s.hMin)}…${fmt(s.hMax)} %, ср. ${fmt(s.hAvg)}`,
-      sparkline(buckets.map((b) => b.h)),
+      sparkline(h),
       '',
       `🌡 ${fmt(s.tMin)}…${fmt(s.tMax)} °C, ср. ${fmt(s.tAvg)}`,
-      sparkline(buckets.map((b) => b.t)),
+      sparkline(t),
     ].join('\n'),
   );
 });
