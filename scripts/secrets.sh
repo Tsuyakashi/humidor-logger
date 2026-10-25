@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Токен бота и chat_id из Vault -> /etc/humidor/secrets.env (0600 root) в CT.
-# Предварительно: vault kv put secret/humidor/telegram bot_token=... chat_ids=123456789
+# Предварительно (mount на проект, KV v2):
+#   vault secrets enable -path=humidor -version=2 kv
+#   vault kv put humidor/telegram bot_token=... chat_ids=123456789
 # Запуск: scripts/secrets.sh <ctid>   (VAULT_ADDR/VAULT_TOKEN из окружения)
 set -euo pipefail
 
 CTID="${1:?usage: secrets.sh <ctid>}"
 PVE_HOST="${PVE_HOST:-pve-rog}"
-VAULT_PATH="${VAULT_PATH:-secret/humidor/telegram}"
+VAULT_PATH="${VAULT_PATH:-humidor/telegram}"
 
 token=$(vault kv get -field=bot_token "$VAULT_PATH")
 chats=$(vault kv get -field=chat_ids "$VAULT_PATH")

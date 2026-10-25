@@ -105,7 +105,13 @@ set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8 LANG=C.UTF-8
 
 apt-get update -q
-apt-get install -y -q curl ca-certificates
+apt-get install -y -q curl ca-certificates locales sqlite3
+
+# pct exec наследует LANG=en_US.UTF-8 хоста — без этой локали perl/apt сыпят warning'ами
+if ! locale -a 2>/dev/null | grep -qx 'en_US.utf8'; then
+  sed -i 's/^# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+  locale-gen
+fi
 
 ln -sf "/usr/share/zoneinfo/${TZ_NAME}" /etc/localtime
 echo "$TZ_NAME" > /etc/timezone
