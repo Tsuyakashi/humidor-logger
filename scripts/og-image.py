@@ -54,17 +54,17 @@ def main() -> None:
         y = py0 + (py1 - py0) * i / 4
         d.line((s(px0), s(y), s(px1), s(y)), fill=GRID, width=s(1))
 
-    # шкала RH 60–75 %, коридор 65–70 %
+    # шкала RH 50–75 %, коридор 55–70 %
     def rh_y(v: float) -> float:
-        return py1 - (v - 60) / 15 * (py1 - py0)
+        return py1 - (v - 50) / 25 * (py1 - py0)
 
-    d.rectangle((s(px0), s(rh_y(70)), s(px1), s(rh_y(65))), fill=BAND)
-    d.text((s(px1), s(rh_y(70) - 8)), '65–70 %', font=small, fill=HUM, anchor='rd')
+    d.rectangle((s(px0), s(rh_y(70)), s(px1), s(rh_y(55))), fill=BAND)
+    d.text((s(px1), s(rh_y(70) - 8)), '55–70 %', font=small, fill=HUM, anchor='rd')
 
     # стилизованные ряды: детерминированная сумма синусоид
     n = 240
     xs = [px0 + (px1 - px0) * i / (n - 1) for i in range(n)]
-    hum = [67.6 + 1.3 * math.sin(i / 23) + 0.6 * math.sin(i / 7.3 + 1) + 0.25 * math.sin(i / 2.1) for i in range(n)]
+    hum = [62.5 + 2.2 * math.sin(i / 23) + 0.6 * math.sin(i / 7.3 + 1) + 0.25 * math.sin(i / 2.1) for i in range(n)]
     temp = [py0 + 180 + 16 * math.sin(i / 31 + 2) + 7 * math.sin(i / 9.7) + 2 * math.sin(i / 3.3) for i in range(n)]
 
     d.line([(s(x), s(y)) for x, y in zip(xs, temp)], fill=TEMP, width=s(5), joint='curve')

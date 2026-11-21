@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Сборка локально и выкладка в CT: dist (вместе с public/ у web) + package.json,
 # npm ci --omit=dev внутри, атомарная замена /opt/humidor/app, все юниты из deploy/systemd, рестарт.
-# Запуск из корня репо: scripts/deploy.sh <ctid>   (PVE_HOST=pve-rog по умолчанию)
+# Запуск из корня репо: scripts/deploy.sh <ctid>   (PVE_HOST=bare-pve по умолчанию)
 set -euo pipefail
 
 CTID="${1:?usage: deploy.sh <ctid>}"
-PVE_HOST="${PVE_HOST:-pve-rog}"
+PVE_HOST="${PVE_HOST:-bare-pve}"
 cd "$(dirname "$0")/.."
 
 log() { echo "[deploy] $*"; }

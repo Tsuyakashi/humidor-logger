@@ -5,7 +5,7 @@
 set -euo pipefail
 
 CTID="${1:?usage: db.sh <ctid>}"
-PVE_HOST="${PVE_HOST:-pve-rog}"
+PVE_HOST="${PVE_HOST:-bare-pve}"
 DB=/var/lib/humidor/humidor.db
 
 DEFAULT_SQL="SELECT datetime(ts/1000, 'unixepoch', 'localtime') AS time,
