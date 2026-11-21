@@ -47,11 +47,11 @@ export function telegramConfig() {
 
 export function thresholdsConfig() {
   return {
-    humLow: num('HUM_LOW', 62),
-    humHigh: num('HUM_HIGH', 73),
+    humLow: num('HUM_LOW', 55),
+    humHigh: num('HUM_HIGH', 70),
     humHyst: num('HUM_HYST', 1.5),
     humForMs: num('HUM_FOR_MIN', 30) * 60_000,
-    tempHigh: num('TEMP_HIGH', 25),
+    tempHigh: num('TEMP_HIGH', 27),
     tempHyst: num('TEMP_HYST', 0.5),
     tempForMs: num('TEMP_FOR_MIN', 15) * 60_000,
     staleMs: num('STALE_MIN', 15) * 60_000,
@@ -61,7 +61,7 @@ export function thresholdsConfig() {
 }
 
 export function webConfig() {
-  const band = (process.env.WEB_RH_BAND || '65,70').split(',').map((s) => Number(s.trim()));
+  const band = (process.env.WEB_RH_BAND || '55,70').split(',').map((s) => Number(s.trim()));
   const [lo, hi] = band;
   if (band.length !== 2 || !Number.isFinite(lo) || !Number.isFinite(hi) || lo! >= hi!) {
     throw new Error(`env WEB_RH_BAND must be "low,high", got "${process.env.WEB_RH_BAND}"`);

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Подготовка Proxmox-хоста под humidor-logger:
-#   прошивка AR3012 (нет в pve-firmware), bluez, D-Bus policy для CT.
+#   прошивка AR3012, если есть встроенный чип (нет в pve-firmware), bluez, D-Bus policy для CT.
 # D-Bus EXTERNAL auth сравнивает uid, заявленный клиентом, с SO_PEERCRED.
 # В unprivileged CT они не совпадают (0 vs 100000) -> daemon рвёт коннект.
 # Поэтому один uid (BUS_UID) мапится в CT 1:1 и только он пускается к org.bluez.
-# Идемпотентный. Запуск: ssh pve-rog 'bash -s' < scripts/host-setup.sh
+# Идемпотентный. Запуск: ssh bare-pve 'bash -s' < scripts/host-setup.sh
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 
@@ -17,16 +17,18 @@ POLICY=/etc/dbus-1/system.d/lxc-bluez.conf
 
 log() { echo "[host-setup] $*"; }
 
-# 1. Прошивка AR3012
-mkdir -p "$FW_DIR"
+# 1. Прошивка AR3012 — только если встроенный чип есть (у USB-донглов CSR и пр. своя)
 fw_new=0
-for f in "${FW_FILES[@]}"; do
-  if [[ ! -s $FW_DIR/$f ]]; then
-    log "fetch firmware $f"
-    curl -fsSL -o "$FW_DIR/$f" "$FW_BASE/$f"
-    fw_new=1
-  fi
-done
+if lsusb -d 13d3:3362 >/dev/null 2>&1; then
+  mkdir -p "$FW_DIR"
+  for f in "${FW_FILES[@]}"; do
+    if [[ ! -s $FW_DIR/$f ]]; then
+      log "fetch firmware $f"
+      curl -fsSL -o "$FW_DIR/$f" "$FW_BASE/$f"
+      fw_new=1
+    fi
+  done
+fi
 
 # 2. bluez
 if ! dpkg -s bluez >/dev/null 2>&1; then
@@ -50,8 +52,13 @@ if (( fw_new )) || [[ ! -e /sys/class/bluetooth/hci0 ]]; then
 fi
 
 [[ -e /sys/class/bluetooth/hci0 ]] || { log "hci0 not found"; exit 1; }
-timeout 5 bluetoothctl list </dev/null | grep -q Controller \
-  || { log "bluetoothd does not see controller"; exit 1; }
+# свежий bluetoothd / переподключившийся донгл появляется не сразу
+ok=0
+for _ in $(seq 1 15); do
+  if timeout 5 bluetoothctl list </dev/null | grep -q Controller; then ok=1; break; fi
+  sleep 2
+done
+(( ok )) || { log "bluetoothd does not see controller"; exit 1; }
 timeout 5 bluetoothctl power on </dev/null >/dev/null
 
 # 3. Хостовый юзер-заглушка под BUS_UID (чтобы uid не занял кто-то ещё) + разрешение на idmap

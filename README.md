@@ -1,6 +1,6 @@
 # humidor-logger
 
-Мониторинг хьюмидора: Xiaomi MJWSD06MMC на прошивке pvvx (BTHome v2) → BlueZ на pve-rog → CT 210.
+Мониторинг хьюмидора: Xiaomi MJWSD06MMC на прошивке pvvx (BTHome v2) → BlueZ на bare-pve → CT 210.
 
 ## Сервисы
 
@@ -16,8 +16,8 @@
 ## Развёртывание
 
 ```bash
-ssh pve-rog 'bash -s' < scripts/host-setup.sh          # прошивка ar3k, bluez, D-Bus policy, subuid
-ssh pve-rog 'bash -s -- 210' < scripts/ct-create.sh    # CT, idmap, Node, /etc/default/humidor
+ssh bare-pve 'bash -s' < scripts/host-setup.sh          # bluez, D-Bus policy, subuid (+ прошивка ar3k, если есть AR3012)
+ssh bare-pve 'bash -s -- 210' < scripts/ct-create.sh    # CT, idmap, Node, /etc/default/humidor
 vault secrets enable -path=humidor -version=2 kv
 vault kv put humidor/telegram bot_token=... chat_ids=...
 scripts/secrets.sh 210                                  # /etc/humidor/secrets.env
@@ -52,6 +52,13 @@ API: `GET /api/now` → `{ ts, temperature, humidity }` (204, если данн�
 
 ## БД
 
+Восстановление из бэкапа (останавливает юниты, кладёт БД под `humidor`, env-файлы в `/etc/humidor`).
+Запускать до `deploy.sh`, иначе collector успеет создать пустую БД:
+
+```bash
+scripts/db-restore.sh 210 humidor.db [humidor-env.tgz]
+```
+
 ```bash
 scripts/db.sh 210                                         # последние 10 измерений
 echo 'SELECT count(*) FROM readings;' | scripts/db.sh 210 # произвольный SQL из stdin
@@ -62,12 +69,18 @@ echo 'SELECT count(*) FROM readings;' | scripts/db.sh 210 # произвольн
 - `/etc/default/humidor`: `DBUS_SYSTEM_BUS_ADDRESS`, `HUMIDOR_MAC`, `HUMIDOR_DB`, `TZ` (пишет ct-create.sh)
 - `/etc/humidor/secrets.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_IDS` (пишет secrets.sh)
 - `/etc/humidor/thresholds.env` (опционально, читает alerter):
-  `HUM_LOW=62 HUM_HIGH=73 HUM_HYST=1.5 HUM_FOR_MIN=30 TEMP_HIGH=25 TEMP_HYST=0.5 TEMP_FOR_MIN=15 STALE_MIN=15 BATT_LOW_V=2.5 REMIND_HOURS=6`
-- `/etc/humidor/web.env` (опционально, читает web): `HUMIDOR_WEB_PORT=8080 WEB_RH_BAND=65,70 WEB_PUBLIC_URL=https://humidor.tail65829d.ts.net`
+  `HUM_LOW=55 HUM_HIGH=70 HUM_HYST=1.5 HUM_FOR_MIN=30 TEMP_HIGH=27 TEMP_HYST=0.5 TEMP_FOR_MIN=15 STALE_MIN=15 BATT_LOW_V=2.5 REMIND_HOURS=6`
+- `/etc/humidor/web.env` (опционально, читает web): `HUMIDOR_WEB_PORT=8080 WEB_RH_BAND=55,70 WEB_PUBLIC_URL=https://humidor.tail65829d.ts.net`
   (`WEB_PUBLIC_URL` — база абсолютных URL для превью ссылки в мессенджерах, `og:url`/`og:image`)
+
+## USB и gpu-arbiter (bare-pve)
+
+CSR-донгл сидит на xHCI `00:14.0`, который `gpu-arbiter.sh` отдаёт в windows-workstation (vfio-pci).
+Пока Windows VM запущена, `hci0` на хосте нет: collector перезапускается, alerter шлёт «Нет данных».
+Обратно на `xhci_hcd` контроллер вернётся только на pre-start ubuntu-workstation (или `gpu-arbiter.sh switch ubuntu`).
 
 ## Логи
 
 ```bash
-ssh pve-rog 'pct exec 210 -- journalctl -u "humidor-*" -f'
+ssh bare-pve 'pct exec 210 -- journalctl -u "humidor-*" -f'
 ```

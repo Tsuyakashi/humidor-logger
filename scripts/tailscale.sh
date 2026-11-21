@@ -5,7 +5,7 @@
 set -euo pipefail
 
 CTID="${1:?usage: tailscale.sh <ctid>}"
-PVE_HOST="${PVE_HOST:-pve-rog}"
+PVE_HOST="${PVE_HOST:-bare-pve}"
 VAULT_TS_PATH="${VAULT_TS_PATH:-tailscale/humidor}"
 PORT="${HUMIDOR_WEB_PORT:-8080}"
 TS_HOSTNAME="${TS_HOSTNAME:-humidor}"

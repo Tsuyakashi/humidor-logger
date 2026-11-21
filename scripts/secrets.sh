@@ -7,7 +7,7 @@
 set -euo pipefail
 
 CTID="${1:?usage: secrets.sh <ctid>}"
-PVE_HOST="${PVE_HOST:-pve-rog}"
+PVE_HOST="${PVE_HOST:-bare-pve}"
 VAULT_PATH="${VAULT_PATH:-humidor/telegram}"
 
 token=$(vault kv get -field=bot_token "$VAULT_PATH")
